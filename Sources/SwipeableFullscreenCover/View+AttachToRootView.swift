@@ -10,31 +10,35 @@ import SwiftUI
 struct RootAttachmentView<Parent: View>: View {
   
   @State private var animate: Bool = false
-  @State private var dragOffset: CGSize = .zero
+  @State private var dragHeight: CGFloat = .zero
   @ObservedObject var coordinator = SheetCoordinator()
   var parent: Parent
   
   var scaleEffectSize: CGFloat {
-    min(1, (0.94) + (((dragOffset.height / UIScreen.main.bounds.height) * 0.1)))
+    min(1, (0.94) + (((dragHeight / UIScreen.main.bounds.height) * 0.1)))
+  }
+  
+  var opacitySize: CGFloat {
+    if coordinator.presentedSheets.isEmpty {
+      return 0.0
+    }
+    return min(1, 0.50 - (((dragHeight / UIScreen.main.bounds.height))))
   }
   
   var cornerRadiusSize: CGFloat {
-    max(0, 20 + (((dragOffset.height / UIScreen.main.bounds.height) * 48)))
+    max(0, 20 + (((dragHeight / UIScreen.main.bounds.height) * 48)))
   }
   
   var body: some View {
     ZStack {
-      if !coordinator.presentedSheets.isEmpty {
-        Color.black.ignoresSafeArea()
-      }
       parent
         .environmentObject(coordinator)
-        .cornerRadius(coordinator.presentedSheets.isEmpty ? 0 : cornerRadiusSize)
+        .cornerRadius(coordinator.presentedSheets.isEmpty ? 1 : cornerRadiusSize)
         .scaleEffect(coordinator.presentedSheets.isEmpty ? 1 : scaleEffectSize, anchor: .bottom)
         .animation(.spring(response: 0.25, dampingFraction: 1.25), value: coordinator.presentedSheets.count)
         .animation(.spring(response: 0.25, dampingFraction: 1.25), value: animate)
         .overlay {
-          Color.black.ignoresSafeArea().opacity((Double(1) - (scaleEffectSize * 1.5)))
+          Color.black.ignoresSafeArea().opacity(opacitySize)
         }
         .ignoresSafeArea()
         .overlay {
@@ -59,20 +63,20 @@ struct RootAttachmentView<Parent: View>: View {
               .gesture(
                 DragGesture()
                   .onChanged({ val in
-                    var translation = val.translation.height * 0.95
-                    if translation < 0 {
-                      translation = 0
+                    withAnimation(.linear(duration: 0.1)) {
+                      dragHeight = val.translation.height
                     }
-                    dragOffset = CGSize(width: val.translation.width, height: round(translation))
                   })
                   .onEnded { val in
                     print(val.velocity.height)
-                    if val.translation.height > 400 || val.velocity.height > 300 {
+                    if val.translation.height > 400 || abs(val.velocity.height) > 600 {
                       coordinator.removeSheet(sheet)
-                      dragOffset = .zero
+                      dragHeight = .zero
                     } else {
                       animate.toggle()
-                      dragOffset = .zero
+                      withAnimation {
+                        dragHeight = .zero
+                      }
                     }
                   }
               )
@@ -83,8 +87,7 @@ struct RootAttachmentView<Parent: View>: View {
       }
       .background(Color(UIColor.systemBackground))
       .cornerRadius(24)
-      .offset(y: dragOffset.height)
-      .animation(.default)
+      .offset(y: dragHeight)
       .ignoresSafeArea()
       .transition(.move(edge: .bottom).animation(.default))
     }

@@ -25,7 +25,7 @@ extension View {
     return SwipeableFullscreenCoverView(
       isPresented: isPresented,
       content: content,
-      parent: self,
+      parent: AnyView(self),
       id: id
     )
   }
@@ -43,11 +43,11 @@ extension View {
     isPresented: Binding<Bool>,
     onDismiss: (() -> Void)? = nil,
     @ViewBuilder content: @escaping () -> T
-  ) -> some View where T: View {
+  ) -> SwipeableFullscreenCoverView<T, String> where T: View {
     return SwipeableFullscreenCoverView(
       isPresented: isPresented,
       content: content,
-      parent: self,
+      parent: AnyView(self),
       id: id
     )
   }

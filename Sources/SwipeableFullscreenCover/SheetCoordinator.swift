@@ -20,12 +20,13 @@ extension SheetPresentation: Equatable {
 }
 
 /// An internal class that controls all SwipeableFullscreenCover's of app.
-internal class SheetCoordinator: ObservableObject {
+public class SheetCoordinator: ObservableObject {
   
   @Published var presentedSheets: [SheetPresentation] = []
-  
-  var content: AnyView = AnyView(EmptyView())
-  var onDismiss: (() -> ())?
+  @Published var configuration: Configuration = .init()
+
+  private var content: AnyView = AnyView(EmptyView())
+  private var onDismiss: (() -> ())?
   
   func updateSheetCoordinator<T: View, R: Equatable>(
     id: R,
@@ -46,9 +47,13 @@ internal class SheetCoordinator: ObservableObject {
         p.id == AnyEquatable(id)
       }
     }
-    print("Presented sheets: \(presentedSheets.count)")
   }
   
+  func updateSheetConfiguration(
+    configuration: Configuration
+  ) {
+    self.configuration = configuration
+  }
   
   func removeSheet(_ sheet: SheetPresentation) {
     presentedSheets.removeAll(where: { $0 == sheet })

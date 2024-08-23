@@ -7,15 +7,27 @@
 
 import SwiftUI
 
+internal typealias Configuration = SwipeableFullscreenCoverConfiguration
+
 /// A wrapper to present swipable fullscreen cover.
-public struct SwipeableFullscreenCoverView<Parent: View, SheetContent: View, R: Equatable>: View {
+public struct SwipeableFullscreenCoverView<SheetContent: View, R: Equatable>: View {
+  
+  // MARK: - Wrapped Properties
+  
   @EnvironmentObject var sheetCoordinator: SheetCoordinator
+  @ObservedObject    var configuration = Configuration()
   
   @Binding public var isPresented: Bool
+  @State private var i: Bool = false
+  
+  // MARK: - Properties
+  
   public let content: () -> SheetContent
-  public let parent: Parent
+  public let parent: AnyView
   public var onDismiss: (() -> Void)?
   public var id: R
+  
+  // MARK: - Body View
   
   public var body: some View {
     parent
@@ -23,9 +35,31 @@ public struct SwipeableFullscreenCoverView<Parent: View, SheetContent: View, R: 
         of: isPresented,
         perform: onPresentationChange
       )
+      .onChange(of: configuration) { c in
+        onConfigurationChange(c)
+      }
+  }
+
+  // MARK: - Methods
+  
+  public func swipeToDismissBehavior(_ behavior: SwipeToDismissBehavior) -> Self {
+    self.configuration.swipeToDismissBehavior = behavior
+    return self
   }
   
-  func onPresentationChange(_ b: Bool) {
+  public func customBackground(_ view: @escaping () -> some View ) -> Self {
+    self.configuration.backgroundView = AnyView(view())
+    if isPresented {
+      onConfigurationChange(configuration, skipI: true)
+    }
+    return self
+  }
+  
+  
+  private func onPresentationChange(_ b: Bool) {
+    if b {
+      sheetCoordinator.configuration = configuration
+    }
     sheetCoordinator.updateSheetCoordinator(
       id: id,
       isPresented: isPresented,
@@ -35,5 +69,15 @@ public struct SwipeableFullscreenCoverView<Parent: View, SheetContent: View, R: 
         onDismiss?()
       }
     )
+  }
+  
+  private func onConfigurationChange(_ c: Configuration, skipI: Bool = false) {
+    guard !skipI || i else { return }
+    i = true
+    if isPresented {
+      sheetCoordinator.updateSheetConfiguration(
+        configuration: c
+      )
+    }
   }
 }

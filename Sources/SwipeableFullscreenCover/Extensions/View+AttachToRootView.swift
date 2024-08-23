@@ -9,9 +9,16 @@ import SwiftUI
 
 struct RootAttachmentView<Parent: View>: View {
   
+  // MARK: - Wrapped Properties
+  
   @State private var animate: Bool = false
   @State private var dragHeight: CGFloat = .zero
+  @State private var scrollOffset: CGFloat = .zero
+  
   @ObservedObject var coordinator = SheetCoordinator()
+  
+  // MARK: - Properties
+  
   var parent: Parent
   
   var scaleEffectSize: CGFloat {
@@ -47,49 +54,73 @@ struct RootAttachmentView<Parent: View>: View {
         .animation(.spring(response: 0.25, dampingFraction: 1.2), value: coordinator.presentedSheets.count)
     }
   }
-
+  
   @ViewBuilder
   var sheetPresentation: some View {
     if let sheet = coordinator.presentedSheets.first {
       GeometryReader { geo in
         ZStack {
-          ZStack(alignment:. top) {
-            Color.clear
-            RoundedRectangle(cornerRadius: 16)
-              .foregroundColor(Color(red: 0.8705, green: 0.8705, blue: 0.8705))
-              .frame(width: 45, height: 6)
-              .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
-              .zIndex(99)
-              .gesture(
-                DragGesture()
-                  .onChanged({ val in
-                    withAnimation(.linear(duration: 0.1)) {
-                      dragHeight = val.translation.height
-                    }
-                  })
-                  .onEnded { val in
-                    print(val.velocity.height)
-                    if val.translation.height > 400 || abs(val.velocity.height) > 600 {
-                      coordinator.removeSheet(sheet)
-                      dragHeight = .zero
-                    } else {
-                      animate.toggle()
-                      withAnimation {
-                        dragHeight = .zero
-                      }
-                    }
-                  }
-              )
+          dragIndicatorView
+          GeometryReader { p in
+            DismissingScrollView(
+              behavior: coordinator.configuration.swipeToDismissBehavior,
+              offset: $scrollOffset) {
+                sheet.view
+              }
           }
-          .zIndex(99)
-          sheet.view
         }
       }
-      .background(Color(UIColor.systemBackground))
+      .background(coordinator.configuration.backgroundView)
       .cornerRadius(24)
       .offset(y: dragHeight)
       .ignoresSafeArea()
       .transition(.move(edge: .bottom).animation(.default))
+      .onChange(of: scrollOffset) { value in
+        if value < 0 {
+          scrollSheet(val: abs(value))
+        }
+      }
+    }
+  }
+  
+  @ViewBuilder
+  var dragIndicatorView: some View {
+    if let sheet = coordinator.presentedSheets.first {
+      ZStack(alignment:. top) {
+        Color.clear
+        RoundedRectangle(cornerRadius: 16)
+          .foregroundColor(Color(red: 0.8705, green: 0.8705, blue: 0.8705))
+          .frame(width: 45, height: 6)
+          .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
+          .zIndex(99)
+          .gesture(
+            DragGesture()
+              .onChanged({ val in
+                scrollSheet(val: val.translation.height)
+              })
+              .onEnded { val in
+                print(val.velocity.height)
+                if val.translation.height > 400 || abs(val.velocity.height) > 600 {
+                  coordinator.removeSheet(sheet)
+                  dragHeight = .zero
+                } else {
+                  animate.toggle()
+                  withAnimation {
+                    dragHeight = .zero
+                  }
+                }
+              }
+          )
+      }
+      .zIndex(99)
+    }
+  }
+  
+  func scrollSheet(val: CGFloat) {
+    withAnimation(.linear(duration: 0.05)) {
+      if val > 0 {
+        dragHeight = val
+      }
     }
   }
 }

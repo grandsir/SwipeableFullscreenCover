@@ -13,9 +13,11 @@ struct RootAttachmentView<Parent: View>: View {
   
   @State private var animate: Bool = false
   @State private var dragHeight: CGFloat = .zero
-  @State private var scrollOffset: CGFloat = .zero
   
   @ObservedObject var coordinator = SheetCoordinator()
+  
+  @State var isScrollEnabled: Bool = false
+  @State var dragState: DragGesture.DragState = .none
   
   // MARK: - Properties
   
@@ -63,10 +65,14 @@ struct RootAttachmentView<Parent: View>: View {
           dragIndicatorView
           GeometryReader { p in
             DismissingScrollView(
+              isScrollEnabled: $isScrollEnabled,
+              dragState: $dragState,
               behavior: coordinator.configuration.swipeToDismissBehavior,
-              offset: $scrollOffset) {
-                sheet.view
-              }
+              gesture: { geo in
+              dragGesture(with: geo)
+            }) {
+              sheet.view
+            }
           }
         }
       }
@@ -75,11 +81,6 @@ struct RootAttachmentView<Parent: View>: View {
       .offset(y: dragHeight)
       .ignoresSafeArea()
       .transition(.move(edge: .bottom).animation(.default))
-      .onChange(of: scrollOffset) { value in
-        if value < 0 {
-          scrollSheet(val: abs(value))
-        }
-      }
     }
   }
   
@@ -99,16 +100,7 @@ struct RootAttachmentView<Parent: View>: View {
                 scrollSheet(val: val.translation.height)
               })
               .onEnded { val in
-                print(val.velocity.height)
-                if val.translation.height > 400 || abs(val.velocity.height) > 600 {
-                  coordinator.removeSheet(sheet)
-                  dragHeight = .zero
-                } else {
-                  animate.toggle()
-                  withAnimation {
-                    dragHeight = .zero
-                  }
-                }
+                onDragEnd(val: val)
               }
           )
       }
@@ -122,6 +114,42 @@ struct RootAttachmentView<Parent: View>: View {
         dragHeight = val
       }
     }
+  }
+  
+  func onDragEnd(val: DragGesture.Value) {
+    if val.translation.height > 400 || abs(val.velocity.height) > 600 {
+      if let sheet = coordinator.presentedSheets.first {
+        coordinator.removeSheet(sheet)
+      }
+      self.isScrollEnabled = true
+    } else {
+      withAnimation(.spring(response: 0.3, dampingFraction: 1.2)) {
+        dragHeight = .zero
+      }
+    }
+  }
+  
+  func dragGesture(with geometry: GeometryProxy) -> some Gesture {
+    DragGesture()
+      .onChanged { value in
+        if value.translation.height < 0 {
+          self.dragState = .changed(value: value)
+          scrollSheet(val: 0)
+        } else {
+//          self.dragState = .none
+          scrollSheet(val: value.translation.height)
+        }
+      }
+      .onEnded { value in
+        if value.translation.height < 0 {
+          self.dragState = .ended(value: value)
+          scrollSheet(val: 0)
+          self.isScrollEnabled = true
+        } else {
+          onDragEnd(val: value)
+          self.dragState = .none
+        }
+      }
   }
 }
 

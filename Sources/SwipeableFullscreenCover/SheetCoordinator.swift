@@ -20,7 +20,7 @@ extension SheetPresentation: Equatable {
 }
 
 /// An internal class that controls all SwipeableFullscreenCover's of app.
-public class SheetCoordinator: ObservableObject {
+public class SheetCoordinator: NSObject, ObservableObject, UIScrollViewDelegate {
   
   @Published var presentedSheets: [SheetPresentation] = []
   @Published var configuration: Configuration = .init()

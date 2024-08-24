@@ -22,6 +22,7 @@ struct ContentView: View {
       .swipeableFullscreenCover(id: FullScreenCoverTab.first, isPresented: $change) {
         ZStack {
           VStack {
+            ScrollView {
               VStack {
                 ForEach(0..<15) { _ in
                   RoundedRectangle(cornerRadius: 16)
@@ -30,6 +31,7 @@ struct ContentView: View {
                 }
               }
               .padding(.horizontal)
+            }
           }
           .padding(.top, 48)
         }

@@ -14,7 +14,7 @@ struct RootAttachmentView<Parent: View>: View {
   @State private var animate: Bool = false
   @State private var dragHeight: CGFloat = .zero
   
-  @ObservedObject var coordinator = SheetCoordinator()
+  @StateObject var coordinator = SheetCoordinator()
   
   @State var isScrollEnabled: Bool = false
   @State var dragState: DragGesture.DragState = .none
@@ -154,7 +154,8 @@ struct RootAttachmentView<Parent: View>: View {
 }
 
 extension View {
-  /// Attaches the swipeable fullscreencover to the root of the view. You should not use this modifier twice and if you attach to a different view, that view will act like root.
+  /// Attaches `SwipeableFullscreenCover` to the root of the view. You should not use this modifier twice and if you attach to a different view, that view will act like root.
+  /// - Important: `SwipeableFullscreenCover` will crash if you don't attach it on the root level.
   public func attachFullscreenCoverToRootView() -> some View {
     RootAttachmentView(parent: self)
   }

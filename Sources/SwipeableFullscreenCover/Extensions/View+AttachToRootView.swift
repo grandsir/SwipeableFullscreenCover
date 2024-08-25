@@ -62,7 +62,6 @@ struct RootAttachmentView<Parent: View>: View {
     if let sheet = coordinator.presentedSheets.first {
       GeometryReader { geo in
         ZStack {
-          dragIndicatorView
           GeometryReader { p in
             DismissingScrollView(
               isScrollEnabled: $isScrollEnabled,
@@ -73,6 +72,7 @@ struct RootAttachmentView<Parent: View>: View {
             }) {
               sheet.view
             }
+            dragIndicatorView
           }
         }
       }
@@ -87,13 +87,11 @@ struct RootAttachmentView<Parent: View>: View {
   @ViewBuilder
   var dragIndicatorView: some View {
     if let sheet = coordinator.presentedSheets.first {
-      ZStack(alignment:. top) {
+      ZStack(alignment: .top) {
         Color.clear
         RoundedRectangle(cornerRadius: 16)
-          .foregroundColor(Color(red: 0.8705, green: 0.8705, blue: 0.8705))
+          .foregroundColor(Color(UIColor.systemGray2))
           .frame(width: 45, height: 6)
-          .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
-          .zIndex(99)
           .gesture(
             DragGesture()
               .onChanged({ val in
@@ -103,8 +101,9 @@ struct RootAttachmentView<Parent: View>: View {
                 onDragEnd(val: val)
               }
           )
+          .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
+          .zIndex(99)
       }
-      .zIndex(99)
     }
   }
   
@@ -122,6 +121,7 @@ struct RootAttachmentView<Parent: View>: View {
         coordinator.removeSheet(sheet)
       }
       self.isScrollEnabled = true
+      dragHeight = 0.0
     } else {
       withAnimation(.spring(response: 0.3, dampingFraction: 1.2)) {
         dragHeight = .zero

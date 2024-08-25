@@ -22,10 +22,14 @@ struct DismissingScrollView<Content: View, G: Gesture>: View {
   var body: some View {
     if case .enabled(let showsIndicators) = behavior {
       GeometryReader { geo in
-        UIScrollViewWrapper(isScrollEnabled: $isScrollEnabled, dragState: $dragState) {
+        UIScrollViewWrapper(
+          isScrollEnabled: $isScrollEnabled,
+          dragState: $dragState,
+          showsIndicators: showsIndicators
+        ) {
           content()
         }
-        .gesture(
+        .simultaneousGesture(
           self.isScrollEnabled ? nil : gesture(geo)
         )
         .coordinateSpace(name: swipeableFullscreenCoverCoordinateSpace)

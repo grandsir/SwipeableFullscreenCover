@@ -29,7 +29,7 @@ struct DismissingScrollView<Content: View, G: Gesture>: View {
         ) {
           content()
         }
-        .simultaneousGesture(
+        .gesture(
           self.isScrollEnabled ? nil : gesture(geo)
         )
         .coordinateSpace(name: swipeableFullscreenCoverCoordinateSpace)

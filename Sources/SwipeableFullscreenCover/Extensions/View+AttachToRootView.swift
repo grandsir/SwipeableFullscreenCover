@@ -11,6 +11,7 @@ struct RootAttachmentView<Parent: View>: View {
   
   // MARK: - Wrapped Properties
   
+  @Environment(\.colorScheme) var colorScheme
   @State private var animate: Bool = false
   @State private var dragHeight: CGFloat = .zero
   
@@ -38,17 +39,27 @@ struct RootAttachmentView<Parent: View>: View {
     max(0, 20 + (((dragHeight / UIScreen.main.bounds.height) * 48)))
   }
   
+  var overlayColor: Color {
+    if colorScheme == .dark {
+      Color.init(white: 0.20)
+    } else {
+      Color.black
+    }
+  }
+  
   var body: some View {
     ZStack {
       parent
         .environmentObject(coordinator)
+        .overlay {
+          overlayColor
+            .ignoresSafeArea()
+            .opacity(opacitySize)
+        }
         .cornerRadius(coordinator.presentedSheets.isEmpty ? 1 : cornerRadiusSize)
         .scaleEffect(coordinator.presentedSheets.isEmpty ? 1 : scaleEffectSize, anchor: .bottom)
         .animation(.spring(response: 0.25, dampingFraction: 1.25), value: coordinator.presentedSheets.count)
         .animation(.spring(response: 0.25, dampingFraction: 1.25), value: animate)
-        .overlay {
-          Color.black.ignoresSafeArea().opacity(opacitySize)
-        }
         .ignoresSafeArea()
         .overlay {
           sheetPresentation

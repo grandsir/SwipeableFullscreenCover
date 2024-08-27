@@ -13,30 +13,30 @@ struct RootAttachmentView<Parent: View>: View {
   
   @Environment(\.colorScheme) var colorScheme
   @State private var animate: Bool = false
-  @State private var dragHeight: CGFloat = .zero
   
   @StateObject var coordinator = SheetCoordinator()
-  
-  @State var isScrollEnabled: Bool = false
-  @State var dragState: DragGesture.DragState = .none
   
   // MARK: - Properties
   
   var parent: Parent
   
+  
+  var isPresented: Bool {
+    return !coordinator.presentedSheets.isEmpty
+  }
   var scaleEffectSize: CGFloat {
-    min(1, (0.94) + (((dragHeight / UIScreen.main.bounds.height) * 0.1)))
+    min(1, (0.94) + (((coordinator.dragHeight / UIScreen.main.bounds.height) * 0.1)))
   }
   
   var opacitySize: CGFloat {
     if coordinator.presentedSheets.isEmpty {
       return 0.0
     }
-    return min(1, 0.50 - (((dragHeight / UIScreen.main.bounds.height))))
+    return min(1, 0.50 - (((coordinator.dragHeight / UIScreen.main.bounds.height))))
   }
   
   var cornerRadiusSize: CGFloat {
-    max(0, 20 + (((dragHeight / UIScreen.main.bounds.height) * 48)))
+    max(0, 20 + (((coordinator.dragHeight / UIScreen.main.bounds.height) * 48)))
   }
   
   var overlayColor: Color {
@@ -73,25 +73,17 @@ struct RootAttachmentView<Parent: View>: View {
     if let sheet = coordinator.presentedSheets.first {
       GeometryReader { geo in
         ZStack {
-          GeometryReader { p in
-            DismissingScrollView(
-              isScrollEnabled: $isScrollEnabled,
-              dragState: $dragState,
-              behavior: coordinator.configuration.swipeToDismissBehavior,
-              gesture: { geo in
-              dragGesture(with: geo)
-            }) {
-              sheet.view
-            }
-            dragIndicatorView
-          }
+          sheet.view
+          dragIndicatorView
         }
       }
+      .frame(height: UIScreen.main.bounds.height)
       .background(coordinator.configuration.backgroundView)
       .cornerRadius(24)
-      .offset(y: dragHeight)
+      .offset(y: coordinator.dragHeight)
       .ignoresSafeArea()
       .transition(.move(edge: .bottom).animation(.default))
+      .environmentObject(coordinator)
     }
   }
   
@@ -103,64 +95,19 @@ struct RootAttachmentView<Parent: View>: View {
         RoundedRectangle(cornerRadius: 16)
           .foregroundColor(Color(UIColor.systemGray2))
           .frame(width: 45, height: 6)
-          .gesture(
+          .highPriorityGesture(
             DragGesture()
               .onChanged({ val in
-                scrollSheet(val: val.translation.height)
+                coordinator.onDragChange(val: val.translation.height)
               })
               .onEnded { val in
-                onDragEnd(val: val)
+                coordinator.onDragEnd(val: val)
               }
           )
           .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
           .zIndex(99)
       }
     }
-  }
-  
-  func scrollSheet(val: CGFloat) {
-    withAnimation(.linear(duration: 0.05)) {
-      if val > 0 {
-        dragHeight = val
-      }
-    }
-  }
-  
-  func onDragEnd(val: DragGesture.Value) {
-    if val.translation.height > 400 || abs(val.velocity.height) > 600 {
-      if let sheet = coordinator.presentedSheets.first {
-        coordinator.removeSheet(sheet)
-      }
-      self.isScrollEnabled = true
-      dragHeight = 0.0
-    } else {
-      withAnimation(.spring(response: 0.3, dampingFraction: 1.2)) {
-        dragHeight = .zero
-      }
-    }
-  }
-  
-  func dragGesture(with geometry: GeometryProxy) -> some Gesture {
-    DragGesture()
-      .onChanged { value in
-        if value.translation.height < 0 {
-          self.dragState = .changed(value: value)
-          scrollSheet(val: 0)
-        } else {
-//          self.dragState = .none
-          scrollSheet(val: value.translation.height)
-        }
-      }
-      .onEnded { value in
-        if value.translation.height < 0 {
-          self.dragState = .ended(value: value)
-          scrollSheet(val: 0)
-          self.isScrollEnabled = true
-        } else {
-          onDragEnd(val: value)
-          self.dragState = .none
-        }
-      }
   }
 }
 

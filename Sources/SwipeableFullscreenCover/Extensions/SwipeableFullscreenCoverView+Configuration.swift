@@ -11,20 +11,12 @@ import SwiftUI
  Configuration for `SwipeableFullscreenCoverView`
  */
 internal class SwipeableFullscreenCoverConfiguration: ObservableObject {
-  @Published var swipeToDismissBehavior: SwipeToDismissBehavior = .notEnabled
   @Published var backgroundView: AnyView = .init(Color(UIColor.systemBackground))
 }
 
 extension SwipeableFullscreenCoverConfiguration: Equatable {
   static func == (lhs: Configuration, rhs: Configuration) -> Bool {
-    return (
-      lhs.swipeToDismissBehavior == rhs.swipeToDismissBehavior
-    )
+    return false
   }
-}
-
-public enum SwipeToDismissBehavior: Equatable {
-  case notEnabled
-  case enabled(showsIndicators: Bool)
 }
 

@@ -42,11 +42,6 @@ public struct SwipeableFullscreenCoverView<SheetContent: View, R: Equatable>: Vi
 
   // MARK: - Methods
   
-  public func swipeToDismissBehavior(_ behavior: SwipeToDismissBehavior) -> Self {
-    self.configuration.swipeToDismissBehavior = behavior
-    return self
-  }
-  
   public func customBackground(_ view: @escaping () -> some View ) -> Self {
     self.configuration.backgroundView = AnyView(view())
     if isPresented {

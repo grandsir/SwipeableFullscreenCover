@@ -15,13 +15,11 @@ struct ContentView: View {
   var body: some View {
     ZStack {
       VStack {
-        ScrollView {
           ForEach(0..<15) { _ in
             RoundedRectangle(cornerRadius: 16)
               .fill(.ultraThinMaterial)
               .frame(height: 150)
           }
-        }
       }
       HStack {
         Button {
@@ -31,18 +29,19 @@ struct ContentView: View {
         }
         .swipeableFullscreenCover(id: FullScreenCoverTab.first, isPresented: $change) {
           VStack {
-            VStack {
-              ForEach(0..<15) { _ in
-                RoundedRectangle(cornerRadius: 16)
-                  .fill(.ultraThinMaterial)
-                  .frame(height: 150)
+            ScrollView(dismissing: true) {
+              VStack {
+                ForEach(0..<15) { _ in
+                  RoundedRectangle(cornerRadius: 16)
+                    .fill(.ultraThinMaterial)
+                    .frame(height: 150)
+                }
               }
+              .padding(.horizontal)
             }
-            .padding(.horizontal)
           }
           .ignoresSafeArea()
         }
-        .swipeToDismissBehavior(.enabled(showsIndicators: false))
         .customBackground {
           Color.init(white: 0.1)
             .overlay(alignment: .topLeading) {

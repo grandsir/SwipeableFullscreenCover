@@ -9,33 +9,66 @@ import SwiftUI
 
 public let swipeableFullscreenCoverCoordinateSpace: String = "SwipeableFullscreenCoverCoordinateSpace"
 
-struct DismissingScrollView<Content: View, G: Gesture>: View {
+public struct ScrollView<Content: View>: View {
   
-  @Binding var isScrollEnabled: Bool
-  @Binding var dragState: DragGesture.DragState
+  @EnvironmentObject var coordinator: SheetCoordinator
   
-  var behavior: SwipeToDismissBehavior
-  var gesture: (GeometryProxy) -> G
-  @ViewBuilder var content: () -> Content
-
+  public var dismissing: Bool = true
+  public var showsIndicators: Bool = true
+  @ViewBuilder public var content: () -> Content
   
-  var body: some View {
-    if case .enabled(let showsIndicators) = behavior {
-      GeometryReader { geo in
-        UIScrollViewWrapper(
-          isScrollEnabled: $isScrollEnabled,
-          dragState: $dragState,
-          showsIndicators: showsIndicators
-        ) {
-          content()
+  public init(
+    dismissing: Bool,
+    content: @escaping () -> Content
+  ) {
+    self.dismissing = dismissing
+    self.content = content
+  }
+  
+  public var body: some View {
+    GeometryReader { geo in
+      VStack {
+        if dismissing {
+          UIScrollViewWrapper(
+            isScrollEnabled: $coordinator.isScrollEnabled,
+            dragState: $coordinator.dragState,
+            showsIndicators: showsIndicators
+          ) {
+            content()
+          }
+          .gesture(
+            self.coordinator.isScrollEnabled ? nil : dragGesture(with: geo)
+          )
+        } else {
+          SwiftUI.ScrollView(showsIndicators: showsIndicators) {
+            content()
+          }
         }
-        .gesture(
-          self.isScrollEnabled ? nil : gesture(geo)
-        )
-        .coordinateSpace(name: swipeableFullscreenCoverCoordinateSpace)
       }
-    } else {
-      content()
     }
   }
+  
+  func dragGesture(with geometry: GeometryProxy) -> some Gesture {
+    DragGesture()
+      .onChanged { value in
+        if value.translation.height < 0 {
+          self.coordinator.dragState = .changed(value: value)
+          coordinator.onDragChange(val: 0)
+        } else {
+          self.coordinator.dragState = .none
+          coordinator.onDragChange(val: value.translation.height)
+        }
+      }
+      .onEnded { value in
+        if value.translation.height < 0 {
+          self.coordinator.dragState = .ended(value: value)
+          coordinator.onDragChange(val: 0)
+          self.coordinator.isScrollEnabled = true
+        } else {
+          coordinator.onDragEnd(val: value)
+          self.coordinator.dragState = .none
+        }
+      }
+  }
+  
 }

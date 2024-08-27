@@ -22,8 +22,11 @@ extension SheetPresentation: Equatable {
 /// An internal class that controls all SwipeableFullscreenCover's of app.
 public class SheetCoordinator: NSObject, ObservableObject, UIScrollViewDelegate {
   
-  @Published var presentedSheets: [SheetPresentation] = [] 
-  @Published var configuration: Configuration = .init()
+  @Published internal var presentedSheets: [SheetPresentation] = []
+  @Published internal var configuration: Configuration = .init()
+  @Published internal var isScrollEnabled: Bool = false
+  @Published internal var dragState: DragGesture.DragState = .none
+  @Published internal var dragHeight: CGFloat = .zero
 
   private var onDismiss: (() -> ())?
   
@@ -57,5 +60,27 @@ public class SheetCoordinator: NSObject, ObservableObject, UIScrollViewDelegate 
   func removeSheet(_ sheet: SheetPresentation) {
     presentedSheets.removeAll(where: { $0 == sheet })
     sheet.onDismiss?()
+  }
+  
+  func onDragChange(val: CGFloat) {
+    withAnimation(.linear(duration: 0.05)) {
+      if val > 0 {
+        dragHeight = val
+      }
+    }
+  }
+  
+  func onDragEnd(val: DragGesture.Value) {
+    if val.translation.height > 400 || abs(val.velocity.height) > 600 {
+      if let sheet = presentedSheets.first {
+        removeSheet(sheet)
+      }
+      self.isScrollEnabled = true
+      dragHeight = 0.0
+    } else {
+      withAnimation(.spring(response: 0.3, dampingFraction: 1.2)) {
+        dragHeight = .zero
+      }
+    }
   }
 }

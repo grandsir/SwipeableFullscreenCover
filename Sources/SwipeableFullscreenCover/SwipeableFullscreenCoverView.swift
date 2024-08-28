@@ -10,11 +10,11 @@ import SwiftUI
 internal typealias Configuration = SwipeableFullscreenCoverConfiguration
 
 /// A wrapper to present swipable fullscreen cover.
-public struct SwipeableFullscreenCoverView<SheetContent: View, R: Equatable>: View {
+public struct SwipeableFullscreenCoverView<SheetContent: View, P: View>: View {
   
   // MARK: - Wrapped Properties
   
-  @EnvironmentObject var sheetCoordinator: SheetCoordinator
+  @StateObject var sheetCoordinator = SheetCoordinator()
   @ObservedObject    var configuration = Configuration()
   
   @Binding public var isPresented: Bool
@@ -22,57 +22,117 @@ public struct SwipeableFullscreenCoverView<SheetContent: View, R: Equatable>: Vi
   
   // MARK: - Properties
   
-  public let content: () -> SheetContent
-  public let parent: AnyView
   public var onDismiss: (() -> Void)?
-  public var id: R
+  public let parent: P
+  public let content: () -> SheetContent
   
   // MARK: - Body View
   
+  @Environment(\.colorScheme) var colorScheme
+  @State private var animate: Bool = false
+  
+  @StateObject var coordinator = SheetCoordinator()
+  
+  // MARK: - Properties
+  
+  var scaleEffectSize: CGFloat {
+    min(1, (0.94) + (((coordinator.dragHeight / UIScreen.main.bounds.height) * 0.1)))
+  }
+  
+  var opacitySize: CGFloat {
+    if !isPresented {
+      return 0.0
+    }
+    return min(1, 0.50 - (((coordinator.dragHeight / UIScreen.main.bounds.height))))
+  }
+  
+  var cornerRadiusSize: CGFloat {
+    max(0, 20 + (((coordinator.dragHeight / UIScreen.main.bounds.height) * 48)))
+  }
+  
+  var overlayColor: Color {
+    if colorScheme == .dark {
+      Color.init(white: 0.20)
+    } else {
+      Color.black
+    }
+  }
+  
   public var body: some View {
-    parent
-      .onChange(
-        of: isPresented,
-        perform: onPresentationChange
-      )
-      .onChange(of: configuration) { c in
-        onConfigurationChange(c)
+    ZStack {
+      if !isPresented {
+        parent
+          .environmentObject(coordinator)
+      } else {
+        parent
       }
-  }
+    }
+    .overlay {
+      overlayColor
+        .ignoresSafeArea()
+        .opacity(opacitySize)
+    }
+    .cornerRadius(!isPresented ? 1 : cornerRadiusSize)
+    .scaleEffect(!isPresented ? 1 : scaleEffectSize, anchor: .bottom)
+    .animation(.spring(response: 0.25, dampingFraction: 1.25), value: isPresented)
+    .animation(.spring(response: 0.25, dampingFraction: 1.25), value: animate)
+    .ignoresSafeArea()
+    .overlay {
+      sheetPresentation
+    }
+    .animation(.spring(response: 0.25, dampingFraction: 1.2), value: isPresented)
 
-  // MARK: - Methods
-  
-  public func customBackground(_ view: @escaping () -> some View ) -> Self {
-    self.configuration.backgroundView = AnyView(view())
-    if isPresented {
-      onConfigurationChange(configuration, skipI: true)
-    }
-    return self
-  }
-  
-  
-  private func onPresentationChange(_ b: Bool) {
-    if b {
-      sheetCoordinator.configuration = configuration
-    }
-    sheetCoordinator.updateSheetCoordinator(
-      id: id,
-      isPresented: isPresented,
-      content: content,
-      onDismiss: {
-        self.isPresented = false
+    .onChange(of: isPresented) { val in
+      if !val {
         onDismiss?()
       }
-    )
+    }
+    .onChange(of: coordinator.present) { val in
+      if !val {
+        isPresented = false
+        onDismiss?()
+      }
+    }
   }
   
-  private func onConfigurationChange(_ c: Configuration, skipI: Bool = false) {
-    guard !skipI || i else { return }
-    i = true
+  @ViewBuilder
+  var sheetPresentation: some View {
     if isPresented {
-      sheetCoordinator.updateSheetConfiguration(
-        configuration: c
-      )
+      GeometryReader { geo in
+        ZStack {
+          content()
+          dragIndicatorView
+        }
+      }
+      .frame(height: UIScreen.main.bounds.height)
+      .cornerRadius(24)
+      .offset(y: coordinator.dragHeight)
+      .ignoresSafeArea()
+      .transition(.move(edge: .bottom).animation(.default))
+      .environmentObject(coordinator)
+    }
+  }
+  
+  @ViewBuilder
+  var dragIndicatorView: some View {
+    if isPresented {
+      ZStack(alignment: .top) {
+        Color.clear
+        RoundedRectangle(cornerRadius: 16)
+          .foregroundColor(Color(UIColor.systemGray2))
+          .frame(width: 45, height: 6)
+          .highPriorityGesture(
+            DragGesture()
+              .onChanged({ val in
+                coordinator.onDragChange(val: val.translation.height)
+              })
+              .onEnded { val in
+                coordinator.onDragEnd(val: val)
+              }
+          )
+          .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
+          .zIndex(99)
+      }
     }
   }
 }

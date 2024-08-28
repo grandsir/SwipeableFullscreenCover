@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-public let swipeableFullscreenCoverCoordinateSpace: String = "SwipeableFullscreenCoverCoordinateSpace"
-
 public struct ScrollView<Content: View>: View {
   
   @EnvironmentObject var coordinator: SheetCoordinator
@@ -19,9 +17,11 @@ public struct ScrollView<Content: View>: View {
   
   public init(
     dismissing: Bool,
+    showsIndicators: Bool = true,
     content: @escaping () -> Content
   ) {
     self.dismissing = dismissing
+    self.showsIndicators = showsIndicators
     self.content = content
   }
   

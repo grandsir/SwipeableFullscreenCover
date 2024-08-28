@@ -22,6 +22,7 @@ extension SheetPresentation: Equatable {
 /// An internal class that controls all SwipeableFullscreenCover's of app.
 public class SheetCoordinator: NSObject, ObservableObject, UIScrollViewDelegate {
   
+  @Published internal var present: Bool = true
   @Published internal var presentedSheets: [SheetPresentation] = []
   @Published internal var configuration: Configuration = .init()
   @Published internal var isScrollEnabled: Bool = false
@@ -30,35 +31,8 @@ public class SheetCoordinator: NSObject, ObservableObject, UIScrollViewDelegate 
 
   private var onDismiss: (() -> ())?
   
-  func updateSheetCoordinator<T: View, R: Equatable>(
-    id: R,
-    isPresented: Bool,
-    content: () -> T,
-    onDismiss: (() -> ())? = nil
-  ) {
-    if isPresented {
-      presentedSheets.append(
-        SheetPresentation(
-          id: AnyEquatable(id),
-          view: AnyView(erasing: content()),
-          onDismiss: onDismiss
-        )
-      )
-    } else {
-      presentedSheets.removeAll { p in
-        p.id == AnyEquatable(id)
-      }
-    }
-  }
-  
-  func updateSheetConfiguration(
-    configuration: Configuration
-  ) {
-    self.configuration = configuration
-  }
-  
   func removeSheet(_ sheet: SheetPresentation) {
-    presentedSheets.removeAll(where: { $0 == sheet })
+    present = false
     sheet.onDismiss?()
   }
   

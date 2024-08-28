@@ -13,7 +13,6 @@ struct SwipeableFullscreenCoverExampleApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-              .attachFullscreenCoverToRootView()
         }
     }
 }

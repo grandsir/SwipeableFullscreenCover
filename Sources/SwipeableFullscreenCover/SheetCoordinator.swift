@@ -31,9 +31,8 @@ public class SheetCoordinator: NSObject, ObservableObject, UIScrollViewDelegate 
 
   private var onDismiss: (() -> ())?
   
-  func removeSheet(_ sheet: SheetPresentation) {
+  func removeSheet() {
     present = false
-    sheet.onDismiss?()
   }
   
   func onDragChange(val: CGFloat) {
@@ -46,12 +45,15 @@ public class SheetCoordinator: NSObject, ObservableObject, UIScrollViewDelegate 
   
   func onDragEnd(val: DragGesture.Value) {
     if val.translation.height > 400 || abs(val.velocity.height) > 600 {
-      if let sheet = presentedSheets.first {
-        removeSheet(sheet)
-      }
+      removeSheet()
       self.isScrollEnabled = true
-      dragHeight = 0.0
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 1.2)) {
+          self.dragHeight = 0.0
+        }
+      }
     } else {
+      present = true
       withAnimation(.spring(response: 0.3, dampingFraction: 1.2)) {
         dragHeight = .zero
       }

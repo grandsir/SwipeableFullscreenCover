@@ -33,7 +33,7 @@ internal struct UIScrollViewWrapper<Content: View>: UIViewControllerRepresentabl
     if viewController.scrollView.isScrollEnabled != self.isScrollEnabled {
       viewController.scrollView.isScrollEnabled = self.isScrollEnabled
     }
-    viewController.scrollView.contentInsetAdjustmentBehavior = .always
+    viewController.scrollView.contentInsetAdjustmentBehavior = .never
     
     switch self.dragState {
     case .none:

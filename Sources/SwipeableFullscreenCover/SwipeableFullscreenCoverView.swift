@@ -60,13 +60,9 @@ public struct SwipeableFullscreenCoverView<SheetContent: View, P: View>: View {
   
   public var body: some View {
     ZStack {
-      if !isPresented {
-        parent
-          .environmentObject(coordinator)
-      } else {
-        parent
-      }
+      parent
     }
+    .environmentObject(coordinator)
     .overlay {
       overlayColor
         .ignoresSafeArea()
@@ -74,7 +70,7 @@ public struct SwipeableFullscreenCoverView<SheetContent: View, P: View>: View {
     }
     .cornerRadius(!isPresented ? 1 : cornerRadiusSize)
     .scaleEffect(!isPresented ? 1 : scaleEffectSize, anchor: .bottom)
-    .animation(.spring(response: 0.25, dampingFraction: 1.25), value: isPresented)
+    .animation(.spring(response: 0.25, dampingFraction: 1.25), value: !isPresented)
     .animation(.spring(response: 0.25, dampingFraction: 1.25), value: animate)
     .ignoresSafeArea()
     .overlay {

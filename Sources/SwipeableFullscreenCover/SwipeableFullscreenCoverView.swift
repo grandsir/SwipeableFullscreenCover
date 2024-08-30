@@ -77,10 +77,10 @@ public struct SwipeableFullscreenCoverView<SheetContent: View, P: View>: View {
       sheetPresentation
     }
     .animation(.spring(response: 0.25, dampingFraction: 1.2), value: isPresented)
-
     .onChange(of: isPresented) { val in
       if !val {
         onDismiss?()
+        coordinator.present = false
       }
     }
     .onChange(of: coordinator.present) { val in
@@ -89,6 +89,9 @@ public struct SwipeableFullscreenCoverView<SheetContent: View, P: View>: View {
         onDismiss?()
       }
     }
+    .environment(\.dismissSwipeable, {
+      isPresented = false
+    })
   }
   
   @ViewBuilder
@@ -130,5 +133,30 @@ public struct SwipeableFullscreenCoverView<SheetContent: View, P: View>: View {
           .zIndex(99)
       }
     }
+  }
+}
+
+public struct SwipeableDismissAction: EnvironmentKey {
+  public static let defaultValue: (() -> Void) = { }
+}
+
+public extension EnvironmentValues {
+  public var dismissSwipeable: () -> Void {
+    get { self[SwipeableDismissAction.self] }
+    set { self[SwipeableDismissAction.self] = newValue }
+  }
+}
+
+public struct ParentView<T: View>: View, Equatable {
+  
+  @EnvironmentObject var coordinator: SheetCoordinator
+  
+  public static func == (lhs: Self, rhs: Self) -> Bool {
+    return true
+  }
+  
+  public var parent: T
+  public var body: some View {
+    parent
   }
 }

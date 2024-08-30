@@ -36,7 +36,7 @@ public class SheetCoordinator: NSObject, ObservableObject, UIScrollViewDelegate 
   }
   
   func onDragChange(val: CGFloat) {
-    withAnimation(.linear(duration: 0.05)) {
+    withAnimation(.linear(duration: 0.1)) {
       if val > 0 {
         dragHeight = val
       }
@@ -45,13 +45,15 @@ public class SheetCoordinator: NSObject, ObservableObject, UIScrollViewDelegate 
   
   func onDragEnd(val: DragGesture.Value) {
     if val.translation.height > 400 || abs(val.velocity.height) > 600 {
-      removeSheet()
       self.isScrollEnabled = true
+      removeSheet()
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
         withAnimation(.spring(response: 0.3, dampingFraction: 1.2)) {
           self.dragHeight = 0.0
+          self.present = false
         }
       }
+      
     } else {
       present = true
       withAnimation(.spring(response: 0.3, dampingFraction: 1.2)) {

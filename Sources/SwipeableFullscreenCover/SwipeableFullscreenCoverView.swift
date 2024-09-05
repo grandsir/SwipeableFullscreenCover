@@ -52,7 +52,7 @@ public struct SwipeableFullscreenCoverView<SheetContent: View, P: View>: View {
   
   var overlayColor: Color {
     if colorScheme == .dark {
-      Color.init(white: 0.20)
+      Color.init(white: 0.10)
     } else {
       Color.black
     }
@@ -78,7 +78,9 @@ public struct SwipeableFullscreenCoverView<SheetContent: View, P: View>: View {
     }
     .animation(.spring(response: 0.25, dampingFraction: 1.2), value: isPresented)
     .onChange(of: isPresented) { val in
-      if !val {
+      if val {
+        self.coordinator.isScrollEnabled = false
+      } else {
         onDismiss?()
         coordinator.present = false
       }

@@ -50,7 +50,7 @@ public class SheetCoordinator: NSObject, ObservableObject, UIScrollViewDelegate 
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
         withAnimation(.spring(response: 0.3, dampingFraction: 1.2)) {
           self.dragHeight = 0.0
-          self.present = false
+          self.present = true
         }
       }
       

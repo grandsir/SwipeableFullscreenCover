@@ -78,9 +78,7 @@ public struct SwipeableFullscreenCoverView<SheetContent: View, P: View>: View {
     }
     .animation(.spring(response: 0.25, dampingFraction: 1.2), value: isPresented)
     .onChange(of: isPresented) { val in
-      if val {
-        self.coordinator.isScrollEnabled = false
-      } else {
+      if !val {
         onDismiss?()
         coordinator.present = false
       }
